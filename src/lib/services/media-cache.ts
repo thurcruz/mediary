@@ -51,7 +51,7 @@ export async function cacheMedia(normalized: NormalizedMedia) {
   return media;
 }
 
-export async function getCachedMedia(provider: string, externalId: string) {
+export async function getCachedMedia(provider: Provider, externalId: string) {
   return prisma.media.findUnique({
     where: { provider_externalId: { provider, externalId } },
   });

@@ -7,6 +7,10 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+// Prisma 7.9.1 doesn't support a separate `directUrl` (neither here nor in
+// prisma.config.ts) - see ARCHITECTURE.md. One connection string is used for
+// everything: the Supabase session pooler (port 5432), since the transaction
+// pooler (6543) rejects the DDL statements schema commands need.
 datasource db {
   provider = "postgresql"
 }
