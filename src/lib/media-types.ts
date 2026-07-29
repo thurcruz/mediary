@@ -79,7 +79,7 @@ export const ThemeSchema = z.enum(THEMES);
 // Media types with a real, working provider integration in this pass.
 // Everything else in MEDIA_TYPES is schema-ready but shows an "em breve"
 // state in search/onboarding until its adapter is wired up.
-export const LIVE_MEDIA_TYPES: MediaType[] = ["MOVIE", "BOOK"];
+export const LIVE_MEDIA_TYPES: MediaType[] = ["MOVIE", "TV_SHOW", "BOOK"];
 
 // Human labels, including the per-media-type verb Mediary uses instead of a
 // generic "completed" ("Assistido" for a movie, "Lido" for a book, etc).
