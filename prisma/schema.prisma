@@ -1,0 +1,389 @@
+// Mediary — data model. See ARCHITECTURE.md for the SQLite-now / Postgres-later
+// decisions behind the choices below (String instead of enum, Genre as a join
+// table instead of a scalar array, Float instead of Decimal, etc).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  name         String?
+  avatarUrl    String?
+  bio          String?
+  profession   String?
+  socialLinks  Json?
+  country      String?
+  city         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  settings           UserSettings?
+  accounts           Account[]
+  sessions           Session[]
+  diaryEntries       DiaryEntry[]
+  reviewLikes        ReviewLike[]
+  comments           Comment[]
+  lists              List[]
+  listCollaborations ListCollaborator[]
+  following          Follow[]           @relation("Follower")
+  followers          Follow[]           @relation("Following")
+  achievements       UserAchievement[]
+  challenges         UserChallenge[]
+  notifications      Notification[]
+}
+
+// Standard Auth.js tables. Not wired to an adapter yet (Credentials-only,
+// JWT sessions for now) but kept so OAuth providers can be added later
+// without a schema change.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model UserSettings {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  enabledMediaTypes Json
+  theme             String   @default("dark")
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Universal media entity
+// ---------------------------------------------------------------------------
+
+model Media {
+  id            String    @id @default(cuid())
+  externalId    String
+  provider      String
+  mediaType     String
+  title         String
+  originalTitle String?
+  description   String?
+  cover         String?
+  banner        String?
+  releaseDate   DateTime?
+  language      String?
+  country       String?
+  duration      Int? // seconds - single cross-type unit (runtime, track length, etc)
+  popularity    Float?
+  ratingAvg     Float? // aggregated from Mediary users, not the provider's own rating
+  ratingCount   Int       @default(0)
+  metadata      Json? // type-specific extra attributes; never filter/sort on this (see ARCHITECTURE.md)
+  lastFetchedAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  genres       MediaGenre[]
+  credits      MediaCredit[]
+  diaryEntries DiaryEntry[]
+  listItems    ListItem[]
+
+  @@unique([provider, externalId])
+  @@index([mediaType])
+  @@index([title])
+}
+
+model Genre {
+  id   String @id @default(cuid())
+  name String @unique
+
+  media MediaGenre[]
+}
+
+model MediaGenre {
+  mediaId String
+  genreId String
+
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([mediaId, genreId])
+}
+
+model Person {
+  id         String  @id @default(cuid())
+  name       String
+  externalId String?
+  provider   String?
+  photoUrl   String?
+
+  credits MediaCredit[]
+
+  @@unique([provider, externalId])
+}
+
+model MediaCredit {
+  id        String  @id @default(cuid())
+  mediaId   String
+  personId  String
+  role      String // DIRECTOR | AUTHOR | ARTIST | DEVELOPER | ACTOR ...
+  character String?
+
+  media  Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([mediaId])
+  @@index([personId])
+}
+
+// ---------------------------------------------------------------------------
+// Diary / consumption
+// ---------------------------------------------------------------------------
+
+model DiaryEntry {
+  id              String    @id @default(cuid())
+  userId          String
+  mediaId         String
+  status          String // PLANNED | IN_PROGRESS | COMPLETED | DROPPED | REPEATING
+  rating          Float?
+  reviewText      String?
+  containsSpoiler Boolean   @default(false)
+  isFavorite      Boolean   @default(false)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  loggedAt        DateTime  @default(now())
+  rewatchCount    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media    Media        @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  likes    ReviewLike[]
+  comments Comment[]
+
+  @@index([userId, loggedAt])
+  @@index([userId, mediaId])
+}
+
+model ReviewLike {
+  id           String   @id @default(cuid())
+  userId       String
+  diaryEntryId String
+  createdAt    DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  diaryEntry DiaryEntry @relation(fields: [diaryEntryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, diaryEntryId])
+}
+
+// Exactly one of diaryEntryId/listId must be set - enforced in
+// src/lib/services/comments.ts (createComment), not at the DB level, since
+// SQLite has no CHECK constraint support via Prisma. Never call
+// prisma.comment.create() outside that service.
+model Comment {
+  id           String   @id @default(cuid())
+  userId       String
+  diaryEntryId String?
+  listId       String?
+  parentId     String?
+  text         String
+  createdAt    DateTime @default(now())
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  diaryEntry DiaryEntry? @relation(fields: [diaryEntryId], references: [id], onDelete: Cascade)
+  list       List?       @relation(fields: [listId], references: [id], onDelete: Cascade)
+  parent     Comment?    @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[]   @relation("CommentReplies")
+
+  @@index([diaryEntryId])
+  @@index([listId])
+  @@index([parentId])
+}
+
+// ---------------------------------------------------------------------------
+// Lists
+// ---------------------------------------------------------------------------
+
+model List {
+  id              String   @id @default(cuid())
+  userId          String
+  title           String
+  description     String?
+  cover           String?
+  visibility      String   @default("PUBLIC") // PUBLIC | PRIVATE | UNLISTED
+  isCollaborative Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items         ListItem[]
+  collaborators ListCollaborator[]
+  comments      Comment[]
+
+  @@index([userId])
+}
+
+model ListItem {
+  id       String   @id @default(cuid())
+  listId   String
+  mediaId  String
+  note     String?
+  position Int      @default(0)
+  addedAt  DateTime @default(now())
+
+  list  List  @relation(fields: [listId], references: [id], onDelete: Cascade)
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, mediaId])
+}
+
+model ListCollaborator {
+  id     String @id @default(cuid())
+  listId String
+  userId String
+  role   String @default("EDITOR")
+
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, userId])
+}
+
+// ---------------------------------------------------------------------------
+// Social graph
+// ---------------------------------------------------------------------------
+
+// Self-follow is blocked in src/lib/services/follow.ts, not at the DB level.
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+// ---------------------------------------------------------------------------
+// Gamification (schema ready now; rules engine is a later phase - see
+// ARCHITECTURE.md. Seeded with a small proof-of-concept catalog, not 300+.)
+// ---------------------------------------------------------------------------
+
+model Achievement {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  name        String
+  description String
+  category    String
+  iconUrl     String?
+  criteria    Json
+
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+}
+
+model Challenge {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  title       String
+  description String
+  category    String
+  criteria    Json
+  startsAt    DateTime?
+  endsAt      DateTime?
+
+  users UserChallenge[]
+}
+
+model UserChallenge {
+  id          String    @id @default(cuid())
+  userId      String
+  challengeId String
+  progress    Json?
+  completedAt DateTime?
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications & news
+// ---------------------------------------------------------------------------
+
+// Denormalized on purpose (type + payload, no FK to the source event) so a
+// notification still renders sensibly even if the like/comment/follow that
+// triggered it is later deleted.
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String // NEW_FOLLOWER | REVIEW_LIKE | COMMENT | ACHIEVEMENT_UNLOCKED
+  payload   Json
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  coverUrl    String?
+  publishedAt DateTime @default(now())
+}
