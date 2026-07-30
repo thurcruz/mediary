@@ -49,10 +49,3 @@ body {
   background: var(--color-primary);
   color: var(--color-primary-foreground);
 }
-
-.glass {
-  background: color-mix(in srgb, var(--surface) 72%, transparent);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-}

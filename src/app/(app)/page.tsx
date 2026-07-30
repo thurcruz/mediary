@@ -14,7 +14,11 @@ export default async function HomePage() {
   const settings = await prisma.userSettings.findUnique({ where: { userId: session.user.id } });
   const enabledMediaTypes = (settings?.enabledMediaTypes as MediaType[] | undefined) ?? [];
 
-  const { entries, isDiscoveryFallback } = await getFeedForUser(session.user.id, enabledMediaTypes);
+  const { entries, isDiscoveryFallback } = await getFeedForUser(
+    session.user.id,
+    enabledMediaTypes,
+    session.user.language,
+  );
 
   const suggestions = isDiscoveryFallback
     ? await prisma.user.findMany({

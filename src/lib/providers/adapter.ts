@@ -1,4 +1,4 @@
-import type { MediaType, Provider } from "@/lib/media-types";
+import type { MediaType, Provider, TitleLanguageKey } from "@/lib/media-types";
 
 /**
  * Shape every provider adapter normalizes its raw API response into. This is
@@ -13,6 +13,8 @@ export interface NormalizedMedia {
   mediaType: MediaType;
   title: string;
   originalTitle?: string | null;
+  /** Per-language title variants, when the provider exposes them (AniList only, today). */
+  titles?: Partial<Record<TitleLanguageKey, string>>;
   description?: string | null;
   cover?: string | null;
   banner?: string | null;

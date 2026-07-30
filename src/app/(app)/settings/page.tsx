@@ -5,6 +5,7 @@ import { signOutAction } from "@/actions/auth";
 import { ThemeToggle } from "@/components/settings/theme-toggle";
 import { ProfileEditForm } from "@/components/settings/profile-edit-form";
 import { MediaTypesForm } from "@/components/settings/media-types-form";
+import { LanguageForm } from "@/components/settings/language-form";
 import { Button } from "@/components/ui/button";
 import type { MediaType } from "@/lib/media-types";
 
@@ -36,6 +37,11 @@ export default async function SettingsPage() {
           Você só vê conteúdo dos tipos selecionados aqui - inclusive de outras pessoas.
         </p>
         <MediaTypesForm defaultValues={enabledMediaTypes} />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-muted">Idioma dos títulos</h2>
+        <LanguageForm defaultValue={user.language} />
       </section>
 
       <section className="flex flex-col gap-3">

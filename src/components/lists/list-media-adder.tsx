@@ -8,13 +8,17 @@ import { addMediaToListAction } from "@/actions/lists";
 import type { NormalizedMedia } from "@/lib/providers/adapter";
 import { MediaCover } from "@/components/media/media-cover";
 import { Input } from "@/components/ui/input";
+import { getDisplayTitle } from "@/lib/utils/display-title";
+import type { ContentLanguage } from "@/lib/media-types";
 
 export function ListMediaAdder({
   listId,
   existingKeys,
+  language,
 }: {
   listId: string;
   existingKeys: string[];
+  language: ContentLanguage;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -68,10 +72,11 @@ export function ListMediaAdder({
           {visibleResults.map((item) => {
             const key = `${item.provider}:${item.externalId}`;
             const alreadyIn = existingKeys.includes(key) || addedKeys.includes(key);
+            const title = getDisplayTitle(item.titles, item.title, language);
             return (
               <div key={key} className="flex items-center gap-3">
-                <MediaCover src={item.cover} title={item.title} className="w-10 shrink-0" />
-                <span className="flex-1 truncate text-sm">{item.title}</span>
+                <MediaCover src={item.cover} title={title} className="w-10 shrink-0" />
+                <span className="flex-1 truncate text-sm">{title}</span>
                 <button
                   type="button"
                   disabled={alreadyIn || addingKey === key}

@@ -1,14 +1,15 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { MapPin, Calendar, ChevronRight } from "lucide-react";
+import { MapPin, Calendar, ChevronRight, AtSign } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { MediaCard } from "@/components/media/media-card";
 import { DiaryEntryCard } from "@/components/diary/diary-entry-card";
 import { FollowButton } from "@/components/diary/follow-button";
 import { mediaDetailHref } from "@/lib/utils/media-href";
+import { buildSocialLinks } from "@/lib/utils/social-links";
+import { getDisplayTitle } from "@/lib/utils/display-title";
 import { MEDIA_TYPE_LABELS, type MediaType, type Provider } from "@/lib/media-types";
 import { getProfileStats } from "@/lib/services/profile-stats";
 import { getUserRecentActivity } from "@/lib/services/diary-feed";
@@ -53,10 +54,10 @@ export default async function ProfilePage({
       take: 12,
       include: { media: true },
     }),
-    getUserRecentActivity(profileUser.id, session.user.id, enabledMediaTypes, 10),
+    getUserRecentActivity(profileUser.id, session.user.id, enabledMediaTypes, session.user.language, 10),
   ]);
 
-  const socialLinks = (profileUser.socialLinks as Record<string, string> | null) ?? {};
+  const socialLinks = buildSocialLinks((profileUser.socialLinks as Record<string, string> | null) ?? {});
 
   return (
     <div className="flex flex-col gap-8 pt-6">
@@ -149,7 +150,7 @@ export default async function ProfilePage({
                   entry.media.provider as Provider,
                   entry.media.externalId,
                 )}
-                title={entry.media.title}
+                title={getDisplayTitle(entry.media.titles, entry.media.title, session.user.language)}
                 cover={entry.media.cover}
                 mediaType={entry.media.mediaType as MediaType}
               />
@@ -169,11 +170,20 @@ export default async function ProfilePage({
         </section>
       )}
 
-      {Object.keys(socialLinks).length > 0 && (
+      {socialLinks.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {Object.entries(socialLinks).map(
-            ([key, value]) => value && <Badge key={key}>{key}: {value}</Badge>,
-          )}
+          {socialLinks.map((link) => (
+            <a
+              key={link.key}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-primary/50 hover:text-foreground"
+            >
+              <AtSign className="h-3.5 w-3.5" />
+              {link.label}
+            </a>
+          ))}
         </div>
       )}
     </div>

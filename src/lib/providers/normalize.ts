@@ -8,6 +8,7 @@ export function mapToMediaFields(
   return {
     title: normalized.title,
     originalTitle: normalized.originalTitle ?? null,
+    titles: (normalized.titles as Prisma.InputJsonValue | undefined) ?? undefined,
     description: normalized.description ?? null,
     cover: normalized.cover ?? null,
     banner: normalized.banner ?? null,

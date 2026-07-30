@@ -17,11 +17,12 @@ export async function registerAction(
     username: formData.get("username"),
     email: formData.get("email"),
     password: formData.get("password"),
+    language: formData.get("language") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
-  const { name, username, email, password } = parsed.data;
+  const { name, username, email, password, language } = parsed.data;
 
   const existing = await prisma.user.findFirst({ where: { OR: [{ email }, { username }] } });
   if (existing) {
@@ -31,7 +32,7 @@ export async function registerAction(
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  await prisma.user.create({ data: { name, username, email, passwordHash } });
+  await prisma.user.create({ data: { name, username, email, passwordHash, language } });
 
   try {
     await signIn("credentials", { email, password, redirect: false });

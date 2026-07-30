@@ -76,10 +76,23 @@ export const THEMES = ["dark", "light"] as const;
 export type Theme = (typeof THEMES)[number];
 export const ThemeSchema = z.enum(THEMES);
 
+export const CONTENT_LANGUAGES = ["EN", "PT_BR", "JA"] as const;
+export type ContentLanguage = (typeof CONTENT_LANGUAGES)[number];
+export const ContentLanguageSchema = z.enum(CONTENT_LANGUAGES);
+export const CONTENT_LANGUAGE_LABELS: Record<ContentLanguage, string> = {
+  EN: "Inglês",
+  PT_BR: "Português (Brasil)",
+  JA: "Japonês",
+};
+// Key used inside Media.titles/NormalizedMedia.titles for each language -
+// distinct from the enum above because "romaji" isn't a selectable account
+// language, just an extra title variant AniList exposes.
+export type TitleLanguageKey = "en" | "ja" | "romaji";
+
 // Media types with a real, working provider integration in this pass.
 // Everything else in MEDIA_TYPES is schema-ready but shows an "em breve"
 // state in search/onboarding until its adapter is wired up.
-export const LIVE_MEDIA_TYPES: MediaType[] = ["MOVIE", "TV_SHOW", "BOOK"];
+export const LIVE_MEDIA_TYPES: MediaType[] = ["MOVIE", "TV_SHOW", "ANIME", "MANGA", "BOOK"];
 
 // Human labels, including the per-media-type verb Mediary uses instead of a
 // generic "completed" ("Assistido" for a movie, "Lido" for a book, etc).

@@ -18,7 +18,7 @@ export function FloatingNav({ username }: { username: string }) {
 
   return (
     <nav className="fixed inset-x-0 bottom-5 z-40 flex justify-center px-4">
-      <div className="glass flex items-center gap-1 rounded-full p-1.5 shadow-2xl shadow-black/20">
+      <div className="flex items-center gap-1 rounded-full border border-border/80 bg-surface/70 p-1.5 shadow-2xl shadow-black/20 backdrop-blur-xl backdrop-saturate-150">
         {items.map((item) => {
           const isActive =
             item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);

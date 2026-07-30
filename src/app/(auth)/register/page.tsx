@@ -6,6 +6,7 @@ import { registerAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
+import { LanguagePicker } from "@/components/onboarding/language-picker";
 
 export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState(registerAction, {});
@@ -32,6 +33,11 @@ export default function RegisterPage() {
       <Field label="Senha" htmlFor="password">
         <Input id="password" name="password" type="password" autoComplete="new-password" required />
       </Field>
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium text-foreground">Idioma dos títulos</span>
+        <LanguagePicker />
+      </div>
 
       {state.error && <p className="text-sm text-danger">{state.error}</p>}
 

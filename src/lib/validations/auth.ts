@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ContentLanguageSchema } from "@/lib/media-types";
 
 const usernamePattern = /^[a-z0-9_]{3,20}$/;
 
@@ -11,6 +12,7 @@ export const registerSchema = z.object({
     .regex(usernamePattern, "Use 3-20 letras minúsculas, números ou _"),
   email: z.string().trim().toLowerCase().email("E-mail inválido"),
   password: z.string().min(8, "Mínimo de 8 caracteres").max(72),
+  language: ContentLanguageSchema.default("PT_BR"),
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 

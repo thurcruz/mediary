@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { MediaCover } from "@/components/media/media-cover";
 import { mediaDetailHref } from "@/lib/utils/media-href";
 import { diaryEntryVerbPastTense, type MediaType, type DiaryStatus, type Provider } from "@/lib/media-types";
+import { getDisplayTitle } from "@/lib/utils/display-title";
 
 export default async function TimelinePage({
   params,
@@ -54,18 +55,19 @@ export default async function TimelinePage({
           <div className="flex flex-col gap-2">
             {yearEntries.map((entry) => {
               const mediaType = entry.media.mediaType as MediaType;
+              const title = getDisplayTitle(entry.media.titles, entry.media.title, session.user.language);
               return (
                 <Link
                   key={entry.id}
                   href={mediaDetailHref(mediaType, entry.media.provider as Provider, entry.media.externalId)}
                   className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3 hover:border-primary/50"
                 >
-                  <MediaCover src={entry.media.cover} title={entry.media.title} className="w-10 shrink-0" />
+                  <MediaCover src={entry.media.cover} title={title} className="w-10 shrink-0" />
                   <p className="text-sm">
                     <span className="text-muted">
                       {diaryEntryVerbPastTense(entry.status as DiaryStatus, mediaType)}{" "}
                     </span>
-                    <span className="font-medium">{entry.media.title}</span>
+                    <span className="font-medium">{title}</span>
                   </p>
                   <span className="ml-auto shrink-0 text-xs text-muted">
                     {entry.loggedAt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}

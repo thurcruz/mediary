@@ -82,14 +82,20 @@ enum Theme {
   light
 }
 
+enum ContentLanguage {
+  EN
+  PT_BR
+  JA
+}
+
 // ---------------------------------------------------------------------------
 // Auth
 // ---------------------------------------------------------------------------
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  username     String   @unique
+  id           String          @id @default(cuid())
+  email        String          @unique
+  username     String          @unique
   passwordHash String
   name         String?
   avatarUrl    String?
@@ -98,8 +104,12 @@ model User {
   socialLinks  Json?
   country      String?
   city         String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  // Preferred title display language - chosen at registration (before
+  // UserSettings exists, which is only created during onboarding), so it
+  // lives on User rather than UserSettings.
+  language     ContentLanguage @default(PT_BR)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
   settings           UserSettings?
   accounts           Account[]
@@ -176,6 +186,11 @@ model Media {
   mediaType     MediaType
   title         String
   originalTitle String?
+  // Per-language title variants the source provider exposed (e.g. AniList's
+  // english/native/romaji) - {en?, ja?, romaji?}. Only populated when the
+  // adapter has this data; display falls back to `title` otherwise. See
+  // getDisplayTitle() in src/lib/utils/display-title.ts.
+  titles        Json?
   description   String?
   cover         String?
   banner        String?

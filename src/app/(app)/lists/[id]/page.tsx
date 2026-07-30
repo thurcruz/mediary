@@ -6,6 +6,7 @@ import { MediaCard } from "@/components/media/media-card";
 import { ListMediaAdder } from "@/components/lists/list-media-adder";
 import { RemoveListItemButton } from "@/components/lists/remove-list-item-button";
 import { mediaDetailHref } from "@/lib/utils/media-href";
+import { getDisplayTitle } from "@/lib/utils/display-title";
 import type { MediaType, Provider, ListVisibility } from "@/lib/media-types";
 
 const VISIBILITY_LABEL: Record<ListVisibility, string> = {
@@ -48,7 +49,9 @@ export default async function ListDetailPage({ params }: { params: Promise<{ id:
         </p>
       </div>
 
-      {isOwner && <ListMediaAdder listId={list.id} existingKeys={existingKeys} />}
+      {isOwner && (
+        <ListMediaAdder listId={list.id} existingKeys={existingKeys} language={session.user.language} />
+      )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {list.items.map((item) => (
@@ -59,7 +62,7 @@ export default async function ListDetailPage({ params }: { params: Promise<{ id:
                 item.media.provider as Provider,
                 item.media.externalId,
               )}
-              title={item.media.title}
+              title={getDisplayTitle(item.media.titles, item.media.title, session.user.language)}
               cover={item.media.cover}
               mediaType={item.media.mediaType as MediaType}
             />

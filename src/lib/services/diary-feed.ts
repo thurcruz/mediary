@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
 import type { DiaryEntryCardData } from "@/components/diary/diary-entry-card";
-import type { MediaType } from "@/lib/media-types";
+import type { ContentLanguage, MediaType } from "@/lib/media-types";
+import { getDisplayTitle } from "@/lib/utils/display-title";
 
 const cardSelect = (viewerId: string | undefined) => ({
   id: true,
@@ -12,7 +13,7 @@ const cardSelect = (viewerId: string | undefined) => ({
   loggedAt: true,
   user: { select: { username: true, name: true, avatarUrl: true } },
   media: {
-    select: { title: true, cover: true, mediaType: true, provider: true, externalId: true },
+    select: { title: true, titles: true, cover: true, mediaType: true, provider: true, externalId: true },
   },
   _count: { select: { likes: true, comments: true } },
   // Sentinel id when there's no viewer keeps this query shape (and its
@@ -27,7 +28,7 @@ const cardSelect = (viewerId: string | undefined) => ({
 
 type RawEntry = Prisma.DiaryEntryGetPayload<{ select: ReturnType<typeof cardSelect> }>;
 
-function toCardData(entry: RawEntry): DiaryEntryCardData {
+function toCardData(entry: RawEntry, viewerLanguage: ContentLanguage): DiaryEntryCardData {
   return {
     id: entry.id,
     status: entry.status,
@@ -36,7 +37,10 @@ function toCardData(entry: RawEntry): DiaryEntryCardData {
     containsSpoiler: entry.containsSpoiler,
     loggedAt: entry.loggedAt,
     user: entry.user,
-    media: entry.media,
+    media: {
+      ...entry.media,
+      title: getDisplayTitle(entry.media.titles, entry.media.title, viewerLanguage),
+    },
     likesCount: entry._count.likes,
     isLikedByViewer: entry.likes.length > 0,
     commentsCount: entry._count.comments,
@@ -48,6 +52,7 @@ export async function getUserRecentActivity(
   profileUserId: string,
   viewerId: string | undefined,
   enabledMediaTypes: MediaType[],
+  viewerLanguage: ContentLanguage,
   limit = 10,
 ): Promise<DiaryEntryCardData[]> {
   const entries = await prisma.diaryEntry.findMany({
@@ -56,7 +61,7 @@ export async function getUserRecentActivity(
     take: limit,
     select: cardSelect(viewerId),
   });
-  return entries.map(toCardData);
+  return entries.map((entry) => toCardData(entry, viewerLanguage));
 }
 
 /**
@@ -68,6 +73,7 @@ export async function getUserRecentActivity(
 export async function getFeedForUser(
   viewerId: string,
   enabledMediaTypes: MediaType[],
+  viewerLanguage: ContentLanguage,
   limit = 30,
 ): Promise<{ entries: DiaryEntryCardData[]; isDiscoveryFallback: boolean }> {
   const following = await prisma.follow.findMany({
@@ -86,7 +92,10 @@ export async function getFeedForUser(
       take: limit,
       select: cardSelect(viewerId),
     });
-    return { entries: entries.map(toCardData), isDiscoveryFallback: true };
+    return {
+      entries: entries.map((entry) => toCardData(entry, viewerLanguage)),
+      isDiscoveryFallback: true,
+    };
   }
 
   const entries = await prisma.diaryEntry.findMany({
@@ -95,5 +104,8 @@ export async function getFeedForUser(
     take: limit,
     select: cardSelect(viewerId),
   });
-  return { entries: entries.map(toCardData), isDiscoveryFallback: false };
+  return {
+    entries: entries.map((entry) => toCardData(entry, viewerLanguage)),
+    isDiscoveryFallback: false,
+  };
 }
