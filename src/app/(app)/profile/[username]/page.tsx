@@ -130,13 +130,29 @@ export default async function ProfilePage({
           ))}
       </div>
 
-      <Link
-        href={`/profile/${profileUser.username}/timeline`}
-        className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 text-sm font-medium hover:border-primary/50"
-      >
-        Ver linha do tempo
-        <ChevronRight className="h-4 w-4 text-muted" />
-      </Link>
+      <div className="flex flex-col gap-3">
+        <Link
+          href={`/profile/${profileUser.username}/timeline`}
+          className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 text-sm font-medium hover:border-primary/50"
+        >
+          Ver linha do tempo
+          <ChevronRight className="h-4 w-4 text-muted" />
+        </Link>
+        <Link
+          href={`/profile/${profileUser.username}/lists`}
+          className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 text-sm font-medium hover:border-primary/50"
+        >
+          {isOwnProfile ? "Suas listas" : "Ver listas"}
+          <ChevronRight className="h-4 w-4 text-muted" />
+        </Link>
+        <Link
+          href={`/profile/${profileUser.username}/achievements`}
+          className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 text-sm font-medium hover:border-primary/50"
+        >
+          {isOwnProfile ? "Suas conquistas" : "Ver conquistas"}
+          <ChevronRight className="h-4 w-4 text-muted" />
+        </Link>
+      </div>
 
       {favorites.length > 0 && (
         <section className="flex flex-col gap-3">

@@ -8,9 +8,12 @@ import { toggleFollowAction } from "@/actions/social";
 export function FollowButton({
   targetUserId,
   initialIsFollowing,
+  onToggled,
 }: {
   targetUserId: string;
   initialIsFollowing: boolean;
+  /** When provided, called with the new following state instead of refreshing the route. */
+  onToggled?: (isFollowing: boolean) => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -23,7 +26,11 @@ export function FollowButton({
       onClick={() =>
         startTransition(async () => {
           await toggleFollowAction(targetUserId, initialIsFollowing);
-          router.refresh();
+          if (onToggled) {
+            onToggled(!initialIsFollowing);
+          } else {
+            router.refresh();
+          }
         })
       }
     >
