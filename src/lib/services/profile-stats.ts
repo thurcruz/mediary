@@ -28,10 +28,12 @@ export async function getProfileStats(userId: string, enabledMediaTypes: MediaTy
     }
   }
 
-  const [followerCount, followingCount, listCount] = await Promise.all([
+  const [followerCount, followingCount, listCount, agreeReceived, disagreeReceived] = await Promise.all([
     prisma.follow.count({ where: { followingId: userId } }),
     prisma.follow.count({ where: { followerId: userId } }),
-    prisma.list.count({ where: { userId } }),
+    prisma.list.count({ where: { userId, isFavoritesList: false } }),
+    prisma.reviewVote.count({ where: { type: "AGREE", diaryEntry: { userId } } }),
+    prisma.reviewVote.count({ where: { type: "DISAGREE", diaryEntry: { userId } } }),
   ]);
 
   return {
@@ -42,5 +44,7 @@ export async function getProfileStats(userId: string, enabledMediaTypes: MediaTy
     followerCount,
     followingCount,
     listCount,
+    // Reputation: net "Concordo"/"Discordo" votes received across all your reviews.
+    reputationScore: agreeReceived - disagreeReceived,
   };
 }

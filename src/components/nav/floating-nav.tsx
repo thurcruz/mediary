@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, UserPlus, Newspaper, User } from "lucide-react";
+import { Home, Search, Users, ListVideo, User } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 export function FloatingNav({ username }: { username: string }) {
@@ -11,8 +11,8 @@ export function FloatingNav({ username }: { username: string }) {
   const items = [
     { href: "/", label: "Início", icon: Home },
     { href: "/search", label: "Buscar", icon: Search },
-    { href: "/friends", label: "Amigos", icon: UserPlus },
-    { href: "/news", label: "Notícias", icon: Newspaper },
+    { href: "/social", label: "Social", icon: Users },
+    { href: "/lists", label: "Listas", icon: ListVideo },
     { href: `/profile/${username}`, label: "Perfil", icon: User },
   ];
 

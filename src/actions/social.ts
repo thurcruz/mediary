@@ -7,15 +7,19 @@ import { createComment } from "@/lib/services/comments";
 import { createNotificationFromActor } from "@/lib/services/notifications";
 import { searchUsers, suggestUsersToFollow, type UserSearchResult } from "@/lib/services/user-search";
 import type { ActionResult } from "@/types/actions";
+import type { MediaType } from "@/lib/media-types";
 
-export async function searchUsersAction(query: string): Promise<UserSearchResult[]> {
+export async function searchUsersAction(
+  query: string,
+  viewerMediaTypes: MediaType[],
+): Promise<UserSearchResult[]> {
   const session = await auth();
   if (!session?.user) return [];
 
   const trimmed = query.trim();
-  if (trimmed.length < 2) return suggestUsersToFollow(session.user.id);
+  if (trimmed.length < 2) return suggestUsersToFollow(session.user.id, viewerMediaTypes);
 
-  return searchUsers(session.user.id, trimmed);
+  return searchUsers(session.user.id, trimmed, viewerMediaTypes);
 }
 
 export async function toggleFollowAction(targetUserId: string, isFollowing: boolean): Promise<void> {
@@ -29,24 +33,36 @@ export async function toggleFollowAction(targetUserId: string, isFollowing: bool
   }
 }
 
-export async function toggleReviewLikeAction(diaryEntryId: string, isLiked: boolean): Promise<void> {
+/** Votes "Concordo"/"Discordo" on a review. Picking the vote already active removes it; picking the other switches it. */
+export async function toggleReviewVoteAction(
+  diaryEntryId: string,
+  voteType: "AGREE" | "DISAGREE",
+  currentVote: "AGREE" | "DISAGREE" | null,
+): Promise<void> {
   const session = await auth();
   if (!session?.user) return;
 
-  if (isLiked) {
-    await prisma.reviewLike.deleteMany({ where: { userId: session.user.id, diaryEntryId } });
+  if (currentVote === voteType) {
+    await prisma.reviewVote.deleteMany({ where: { userId: session.user.id, diaryEntryId } });
     return;
   }
 
-  await prisma.reviewLike.create({ data: { userId: session.user.id, diaryEntryId } });
-  const entry = await prisma.diaryEntry.findUnique({
-    where: { id: diaryEntryId },
-    select: { userId: true },
+  await prisma.reviewVote.upsert({
+    where: { userId_diaryEntryId: { userId: session.user.id, diaryEntryId } },
+    create: { userId: session.user.id, diaryEntryId, type: voteType },
+    update: { type: voteType },
   });
-  if (entry && entry.userId !== session.user.id) {
-    await createNotificationFromActor(entry.userId, "REVIEW_LIKE", session.user.id, {
-      diaryEntryId,
+
+  if (voteType === "AGREE") {
+    const entry = await prisma.diaryEntry.findUnique({
+      where: { id: diaryEntryId },
+      select: { userId: true },
     });
+    if (entry && entry.userId !== session.user.id) {
+      await createNotificationFromActor(entry.userId, "REVIEW_LIKE", session.user.id, {
+        diaryEntryId,
+      });
+    }
   }
 }
 

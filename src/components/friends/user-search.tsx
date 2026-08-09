@@ -8,8 +8,15 @@ import type { UserSearchResult } from "@/lib/services/user-search";
 import { Avatar } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { FollowButton } from "@/components/diary/follow-button";
+import type { MediaType } from "@/lib/media-types";
 
-export function UserSearch({ initialSuggestions }: { initialSuggestions: UserSearchResult[] }) {
+export function UserSearch({
+  initialSuggestions,
+  viewerMediaTypes,
+}: {
+  initialSuggestions: UserSearchResult[];
+  viewerMediaTypes: MediaType[];
+}) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UserSearchResult[]>(initialSuggestions);
   const [isPending, startTransition] = useTransition();
@@ -19,11 +26,12 @@ export function UserSearch({ initialSuggestions }: { initialSuggestions: UserSea
   useEffect(() => {
     const timeout = setTimeout(() => {
       startTransition(async () => {
-        setResults(await searchUsersAction(trimmedQuery));
+        setResults(await searchUsersAction(trimmedQuery, viewerMediaTypes));
       });
     }, 350);
 
     return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trimmedQuery]);
 
   return (

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { MediaType } from "@/lib/media-types";
 
 export type UserSearchResult = {
   id: string;
@@ -21,9 +22,34 @@ async function withFollowStatus(viewerId: string, users: Array<Omit<UserSearchRe
   return users.map((user) => ({ ...user, isFollowing: followingIds.has(user.id) }));
 }
 
-const SELECT = { id: true, username: true, name: true, avatarUrl: true, bio: true } as const;
+const SELECT = {
+  id: true,
+  username: true,
+  name: true,
+  avatarUrl: true,
+  bio: true,
+  settings: { select: { enabledMediaTypes: true } },
+} as const;
 
-export async function searchUsers(viewerId: string, query: string): Promise<UserSearchResult[]> {
+type CandidateWithSettings = { settings: { enabledMediaTypes: unknown } | null };
+
+/** Only people who share at least one enabled media type with the viewer show up as candidates. */
+function hasOverlappingMediaTypes(candidate: CandidateWithSettings, viewerMediaTypes: MediaType[]) {
+  const candidateTypes = (candidate.settings?.enabledMediaTypes as MediaType[] | undefined) ?? [];
+  return candidateTypes.some((type) => viewerMediaTypes.includes(type));
+}
+
+function dropSettings<T extends { settings: unknown }>(user: T): Omit<T, "settings"> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { settings: _settings, ...rest } = user;
+  return rest;
+}
+
+export async function searchUsers(
+  viewerId: string,
+  query: string,
+  viewerMediaTypes: MediaType[],
+): Promise<UserSearchResult[]> {
   const users = await prisma.user.findMany({
     where: {
       id: { not: viewerId },
@@ -33,14 +59,18 @@ export async function searchUsers(viewerId: string, query: string): Promise<User
       ],
     },
     select: SELECT,
-    take: 20,
+    take: 40,
   });
 
-  return withFollowStatus(viewerId, users);
+  const matched = users.filter((user) => hasOverlappingMediaTypes(user, viewerMediaTypes)).slice(0, 20);
+  return withFollowStatus(viewerId, matched.map(dropSettings));
 }
 
-/** Users not yet followed, most-followed first - shown when the search box is empty. */
-export async function suggestUsersToFollow(viewerId: string): Promise<UserSearchResult[]> {
+/** Users not yet followed who share a media type, most-followed first - shown when the search box is empty. */
+export async function suggestUsersToFollow(
+  viewerId: string,
+  viewerMediaTypes: MediaType[],
+): Promise<UserSearchResult[]> {
   const alreadyFollowing = await prisma.follow.findMany({
     where: { followerId: viewerId },
     select: { followingId: true },
@@ -52,8 +82,9 @@ export async function suggestUsersToFollow(viewerId: string): Promise<UserSearch
     },
     select: SELECT,
     orderBy: { followers: { _count: "desc" } },
-    take: 12,
+    take: 50,
   });
 
-  return withFollowStatus(viewerId, users);
+  const matched = users.filter((user) => hasOverlappingMediaTypes(user, viewerMediaTypes)).slice(0, 12);
+  return withFollowStatus(viewerId, matched.map(dropSettings));
 }

@@ -3,7 +3,7 @@ import { MessageCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { MediaCover } from "@/components/media/media-cover";
 import { StarRating } from "@/components/ui/star-rating";
-import { LikeButton } from "@/components/diary/like-button";
+import { VoteButtons } from "@/components/diary/vote-buttons";
 import { CommentForm } from "@/components/diary/comment-form";
 import { mediaDetailHref } from "@/lib/utils/media-href";
 import { diaryEntryVerbPastTense, type MediaType, type DiaryStatus, type Provider } from "@/lib/media-types";
@@ -15,6 +15,7 @@ export type DiaryEntryCardData = {
   reviewText: string | null;
   containsSpoiler: boolean;
   loggedAt: Date;
+  wasEdited: boolean;
   user: { username: string; name: string | null; avatarUrl: string | null };
   media: {
     title: string;
@@ -23,8 +24,9 @@ export type DiaryEntryCardData = {
     provider: string;
     externalId: string;
   };
-  likesCount: number;
-  isLikedByViewer: boolean;
+  agreeCount: number;
+  disagreeCount: number;
+  myVote: "AGREE" | "DISAGREE" | null;
   commentsCount: number;
   comments: { id: string; text: string; user: { username: string; name: string | null } }[];
 };
@@ -65,13 +67,15 @@ export function DiaryEntryCard({ entry }: { entry: DiaryEntryCardData }) {
           ))}
 
         <div className="mt-1 flex items-center gap-4">
-          <LikeButton
+          <VoteButtons
             diaryEntryId={entry.id}
-            initialIsLiked={entry.isLikedByViewer}
-            initialCount={entry.likesCount}
+            initialAgreeCount={entry.agreeCount}
+            initialDisagreeCount={entry.disagreeCount}
+            initialMyVote={entry.myVote}
           />
           <span className="ml-auto text-xs text-muted">
             {entry.loggedAt.toLocaleDateString("pt-BR")}
+            {entry.wasEdited && " · editado"}
           </span>
         </div>
 

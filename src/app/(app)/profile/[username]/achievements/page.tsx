@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Trophy } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getUserBadges } from "@/lib/services/badges";
+import { BadgeTile } from "@/components/badges/badge-tile";
+import { RedeemBadgeForm } from "@/components/badges/redeem-badge-form";
 
 export default async function AchievementsPage({
   params,
@@ -17,21 +19,38 @@ export default async function AchievementsPage({
   if (!profileUser) notFound();
 
   const isOwnProfile = session.user.id === profileUser.id;
+  const badges = await getUserBadges(profileUser.id);
+  const visibleBadges = isOwnProfile ? badges : badges.filter((b) => b.unlockedAt);
 
   return (
     <div className="flex flex-col gap-6 pt-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">
-          {isOwnProfile ? "Suas conquistas" : `Conquistas de ${profileUser.name ?? profileUser.username}`}
+          {isOwnProfile ? "Seus emblemas" : `Emblemas de ${profileUser.name ?? profileUser.username}`}
         </h1>
         <Link href={`/profile/${username}`} className="text-sm text-muted hover:text-foreground">
           @{profileUser.username}
         </Link>
       </div>
 
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-10 text-center">
-        <Trophy className="h-8 w-8 text-muted" />
-        <p className="text-sm text-muted">Nenhuma conquista disponível ainda.</p>
+      {isOwnProfile && <RedeemBadgeForm />}
+
+      {visibleBadges.length === 0 && (
+        <p className="text-sm text-muted">Nenhum emblema conquistado ainda.</p>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {visibleBadges.map((badge) => (
+          <BadgeTile
+            key={badge.id}
+            code={badge.code}
+            name={badge.name}
+            description={badge.description}
+            iconUrl={badge.iconUrl}
+            unlockedAt={badge.unlockedAt}
+            isSecret={badge.isSecret}
+          />
+        ))}
       </div>
     </div>
   );

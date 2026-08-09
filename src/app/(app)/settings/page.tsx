@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -64,6 +65,15 @@ export default async function SettingsPage() {
           Sair da conta
         </Button>
       </form>
+
+      <div className="flex justify-center gap-4 border-t border-border pt-6 text-xs text-muted">
+        <Link href="/privacy" className="hover:text-foreground">
+          Política de privacidade
+        </Link>
+        <Link href="/terms" className="hover:text-foreground">
+          Termos de uso
+        </Link>
+      </div>
     </div>
   );
 }

@@ -10,6 +10,7 @@ type NotificationPayload = {
   fromUsername?: string;
   fromName?: string;
   fromAvatarUrl?: string | null;
+  achievementName?: string;
 };
 
 const ICONS: Record<NotificationType, typeof UserPlus> = {
@@ -19,16 +20,18 @@ const ICONS: Record<NotificationType, typeof UserPlus> = {
   ACHIEVEMENT_UNLOCKED: Trophy,
 };
 
-function notificationText(type: NotificationType, name: string): string {
+function notificationText(type: NotificationType, name: string, payload: NotificationPayload): string {
   switch (type) {
     case "NEW_FOLLOWER":
-      return `${name} começou a seguir você`;
+      return `${name} agora é seu fã`;
     case "REVIEW_LIKE":
-      return `${name} curtiu seu registro`;
+      return `${name} concordou com seu registro`;
     case "COMMENT":
       return `${name} comentou no seu registro`;
     case "ACHIEVEMENT_UNLOCKED":
-      return `Você desbloqueou uma conquista`;
+      return payload.achievementName
+        ? `Você desbloqueou o emblema "${payload.achievementName}"`
+        : "Você desbloqueou um emblema";
   }
 }
 
@@ -75,7 +78,7 @@ export default async function NotificationsPage() {
                   <Icon className="h-4 w-4" />
                 </div>
               )}
-              <p className="flex-1 text-sm">{notificationText(type, name)}</p>
+              <p className="flex-1 text-sm">{notificationText(type, name, payload)}</p>
               <span className="text-xs text-muted">
                 {notification.createdAt.toLocaleDateString("pt-BR")}
               </span>

@@ -62,7 +62,12 @@ export default async function ProfilePage({
   return (
     <div className="flex flex-col gap-8 pt-6">
       <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
-        <Avatar src={profileUser.avatarUrl} name={profileUser.name ?? profileUser.username} size={80} />
+        <Avatar
+          src={profileUser.avatarUrl}
+          name={profileUser.name ?? profileUser.username}
+          size={80}
+          isSupporter={profileUser.isSupporter}
+        />
         <div className="flex flex-1 flex-col gap-2">
           <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
             <div>
@@ -102,8 +107,7 @@ export default async function ProfilePage({
 
           <div className="flex justify-center gap-5 text-sm sm:justify-start">
             <span>
-              <strong>{stats.followerCount}</strong>{" "}
-              <span className="text-muted">seguidores</span>
+              <strong>{stats.followerCount}</strong> <span className="text-muted">fãs</span>
             </span>
             <span>
               <strong>{stats.followingCount}</strong>{" "}
@@ -111,6 +115,10 @@ export default async function ProfilePage({
             </span>
             <span>
               <strong>{stats.listCount}</strong> <span className="text-muted">listas</span>
+            </span>
+            <span>
+              <strong>{stats.reputationScore}</strong>{" "}
+              <span className="text-muted">reputação</span>
             </span>
           </div>
         </div>
@@ -149,7 +157,7 @@ export default async function ProfilePage({
           href={`/profile/${profileUser.username}/achievements`}
           className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 text-sm font-medium hover:border-primary/50"
         >
-          {isOwnProfile ? "Suas conquistas" : "Ver conquistas"}
+          {isOwnProfile ? "Seus emblemas" : "Ver emblemas"}
           <ChevronRight className="h-4 w-4 text-muted" />
         </Link>
       </div>
@@ -202,6 +210,13 @@ export default async function ProfilePage({
           ))}
         </div>
       )}
+
+      <Link
+        href="/apoie-se"
+        className="self-center text-xs font-medium text-muted hover:text-primary"
+      >
+        Apoie-se
+      </Link>
     </div>
   );
 }

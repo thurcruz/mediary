@@ -14,16 +14,20 @@ export function Avatar({
   name,
   size = 40,
   className,
+  isSupporter = false,
 }: {
   src?: string | null;
   name: string;
   size?: number;
   className?: string;
+  /** Golden ring - Apoie-se supporter perk. */
+  isSupporter?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-elevated border border-border text-foreground font-medium",
+        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-elevated border text-foreground font-medium",
+        isSupporter ? "border-2 border-amber-400" : "border border-border",
         className,
       )}
       style={{ width: size, height: size, fontSize: size * 0.38 }}

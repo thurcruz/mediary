@@ -15,12 +15,15 @@ export function ListCard({
   visibility,
   itemCount,
   covers,
+  creatorName,
 }: {
   id: string;
   title: string;
   visibility: ListVisibility;
   itemCount: number;
   covers: (string | null)[];
+  /** Shown below the title for lists you follow but didn't create. */
+  creatorName?: string;
 }) {
   const Icon = VISIBILITY_ICON[visibility];
 
@@ -40,6 +43,7 @@ export function ListCard({
           <Icon className="h-3.5 w-3.5" />
           <span>{itemCount} itens</span>
         </div>
+        {creatorName && <p className="mt-1 text-xs text-muted">por {creatorName}</p>}
       </div>
     </Link>
   );

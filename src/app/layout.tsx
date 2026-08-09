@@ -16,6 +16,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Mediary — Your Media Diary",
   description: "Seu diário de vida cultural: filmes, séries, animes, mangás, livros, álbuns e jogos em um só lugar.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Mediary",
+  },
+  icons: {
+    icon: "/icon.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+export const viewport = {
+  themeColor: "#0055ff",
 };
 
 export default function RootLayout({

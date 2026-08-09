@@ -77,6 +77,11 @@ enum NotificationType {
   ACHIEVEMENT_UNLOCKED
 }
 
+enum ReviewVoteType {
+  AGREE
+  DISAGREE
+}
+
 enum Theme {
   dark
   light
@@ -108,6 +113,9 @@ model User {
   // UserSettings exists, which is only created during onboarding), so it
   // lives on User rather than UserSettings.
   language     ContentLanguage @default(PT_BR)
+  // Apoie-se supporter flag - toggled manually for now (see ARCHITECTURE.md);
+  // no payment provider wired up yet. Unlocks the golden avatar frame.
+  isSupporter  Boolean         @default(false)
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
@@ -115,9 +123,10 @@ model User {
   accounts           Account[]
   sessions           Session[]
   diaryEntries       DiaryEntry[]
-  reviewLikes        ReviewLike[]
+  reviewVotes        ReviewVote[]
   comments           Comment[]
   lists              List[]
+  listFollows        ListFollow[]
   listCollaborations ListCollaborator[]
   following          Follow[]           @relation("Follower")
   followers          Follow[]           @relation("Following")
@@ -281,23 +290,30 @@ model DiaryEntry {
 
   user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   media    Media        @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  likes    ReviewLike[]
+  votes    ReviewVote[]
   comments Comment[]
 
   @@index([userId, loggedAt])
   @@index([userId, mediaId])
 }
 
-model ReviewLike {
-  id           String   @id @default(cuid())
+// Reputation system: reviews get "Concordo"/"Discordo" votes instead of a
+// plain like. A user's reputation score is the net (agree - disagree) across
+// all their reviews - computed on read in profile-stats.ts, not stored.
+model ReviewVote {
+  id           String         @id @default(cuid())
   userId       String
   diaryEntryId String
-  createdAt    DateTime @default(now())
+  type         ReviewVoteType @default(AGREE)
+  createdAt    DateTime       @default(now())
 
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   diaryEntry DiaryEntry @relation(fields: [diaryEntryId], references: [id], onDelete: Cascade)
 
   @@unique([userId, diaryEntryId])
+  // Keeps the physical table name ReviewLike - only the Prisma model and
+  // relation field names changed, so no table rename DDL is needed.
+  @@map("ReviewLike")
 }
 
 // Exactly one of diaryEntryId/listId must be set - enforced in
@@ -335,15 +351,32 @@ model List {
   cover           String?
   visibility      ListVisibility @default(PUBLIC)
   isCollaborative Boolean        @default(false)
+  // The one auto-managed "Favoritos" list per user (Favoritar button on the
+  // media page) - never shown in "create list" flows, at most one per user.
+  isFavoritesList Boolean        @default(false)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
   user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   items         ListItem[]
   collaborators ListCollaborator[]
+  followers     ListFollow[]
   comments      Comment[]
 
   @@index([userId])
+}
+
+model ListFollow {
+  id        String   @id @default(cuid())
+  listId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, userId])
+  @@index([listId])
 }
 
 model ListItem {
@@ -395,13 +428,21 @@ model Follow {
 // ARCHITECTURE.md. Seeded with a small proof-of-concept catalog, not 300+.)
 // ---------------------------------------------------------------------------
 
+// User-facing label is "Emblema" (badge), not "Conquista" - kept the Prisma
+// model name to avoid an unnecessary rename migration. `code` is the number
+// printed alongside the badge; `secretWord` (optional) lets it be unlocked
+// via the "resgatar emblema secreto" form instead of automatic criteria.
+// Catalog lives in src/lib/badges-catalog.ts + PNGs in public/badges - see
+// syncBadgeCatalog() in src/lib/services/badges.ts.
 model Achievement {
   id          String  @id @default(cuid())
   key         String  @unique
+  code        Int     @unique
   name        String
   description String
   category    String
   iconUrl     String?
+  secretWord  String? @unique
   criteria    Json
 
   users UserAchievement[]

@@ -2,13 +2,16 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { MediaTypeSchema, ProviderSchema, MEDIA_TYPE_LABELS, diaryStatusLabel, type DiaryStatus } from "@/lib/media-types";
+import { MediaTypeSchema, ProviderSchema, MEDIA_TYPE_LABELS } from "@/lib/media-types";
 import { resolveOrCacheMedia } from "@/lib/services/media-cache";
+import { isMediaFavorited } from "@/lib/services/favorites";
 import { getDisplayTitle, getAlternateTitles } from "@/lib/utils/display-title";
 import { MediaCover } from "@/components/media/media-cover";
+import { FavoriteButton } from "@/components/media/favorite-button";
 import { StarRating } from "@/components/ui/star-rating";
 import { Badge } from "@/components/ui/badge";
 import { DiaryEntryForm } from "@/components/diary/diary-entry-form";
+import { MyEntryCard } from "@/components/diary/my-entry-card";
 
 export default async function MediaDetailPage({
   params,
@@ -33,12 +36,15 @@ export default async function MediaDetailPage({
   });
 
   const session = await auth();
-  const myEntries = session?.user
-    ? await prisma.diaryEntry.findMany({
-        where: { userId: session.user.id, mediaId: media.id },
-        orderBy: { loggedAt: "desc" },
-      })
-    : [];
+  const [myEntries, isFavorited] = session?.user
+    ? await Promise.all([
+        prisma.diaryEntry.findMany({
+          where: { userId: session.user.id, mediaId: media.id },
+          orderBy: { loggedAt: "desc" },
+        }),
+        isMediaFavorited(session.user.id, media.id),
+      ])
+    : [[], false];
 
   const year = media.releaseDate ? new Date(media.releaseDate).getFullYear() : null;
   const displayTitle = getDisplayTitle(media.titles, media.title, session?.user?.language ?? "PT_BR");
@@ -96,6 +102,15 @@ export default async function MediaDetailPage({
         </div>
       </div>
 
+      {session?.user && (
+        <FavoriteButton
+          mediaType={mediaType}
+          provider={provider}
+          externalId={externalId}
+          initialIsFavorited={isFavorited}
+        />
+      )}
+
       {media.description && (
         <p className="text-sm leading-relaxed text-foreground/90">{media.description}</p>
       )}
@@ -106,14 +121,7 @@ export default async function MediaDetailPage({
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-medium text-muted">Seus registros</h2>
           {myEntries.map((entry) => (
-            <div key={entry.id} className="rounded-2xl border border-border bg-surface p-4 text-sm">
-              <div className="flex items-center justify-between">
-                <span>{diaryStatusLabel(entry.status as DiaryStatus, mediaType)}</span>
-                {entry.rating != null && <StarRating value={entry.rating} readOnly size={14} />}
-              </div>
-              {entry.reviewText && <p className="mt-2 text-foreground/90">{entry.reviewText}</p>}
-              <p className="mt-2 text-xs text-muted">{entry.loggedAt.toLocaleDateString("pt-BR")}</p>
-            </div>
+            <MyEntryCard key={entry.id} entry={entry} mediaType={mediaType} />
           ))}
         </div>
       )}
