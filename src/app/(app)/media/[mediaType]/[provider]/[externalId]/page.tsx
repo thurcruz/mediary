@@ -27,7 +27,8 @@ export default async function MediaDetailPage({
   const mediaType = mediaTypeParsed.data;
   const provider = providerParsed.data;
 
-  const media = await resolveOrCacheMedia(provider, mediaType, decodeURIComponent(externalId));
+  const decodedExternalId = decodeURIComponent(externalId);
+  const media = await resolveOrCacheMedia(provider, mediaType, decodedExternalId);
   if (!media) notFound();
 
   const genres = await prisma.mediaGenre.findMany({
@@ -106,7 +107,7 @@ export default async function MediaDetailPage({
         <FavoriteButton
           mediaType={mediaType}
           provider={provider}
-          externalId={externalId}
+          externalId={decodedExternalId}
           initialIsFavorited={isFavorited}
         />
       )}
