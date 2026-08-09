@@ -16,10 +16,27 @@ export type BadgeCatalogEntry = {
   iconUrl: string | null;
   /** Case-insensitive. Set only for badges unlocked via "resgatar emblema secreto". */
   secretWord?: string;
+  /**
+   * Granted automatically to every new account at registration (see
+   * grantSignupBadges in src/lib/services/badges.ts). This is meant to be
+   * temporary - flip to false (or delete the flag) here when told to stop,
+   * no other code change needed.
+   */
+  autoGrantOnSignup?: boolean;
   criteria: Record<string, unknown>;
 };
 
 export const BADGES_CATALOG: BadgeCatalogEntry[] = [
+  {
+    code: 0,
+    key: "og",
+    name: "OG",
+    description: "Criou a conta durante o lançamento do Mediary.",
+    category: "Especial",
+    iconUrl: "/badges/OG.png",
+    autoGrantOnSignup: true,
+    criteria: { type: "manual" },
+  },
   {
     code: 1,
     key: "first_log",

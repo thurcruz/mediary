@@ -6,6 +6,7 @@ import { AuthError } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { signIn, signOut } from "@/lib/auth";
 import { registerSchema, loginSchema } from "@/lib/validations/auth";
+import { grantSignupBadges } from "@/lib/services/badges";
 import type { ActionResult } from "@/types/actions";
 
 export async function registerAction(
@@ -32,7 +33,8 @@ export async function registerAction(
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  await prisma.user.create({ data: { name, username, email, passwordHash, language } });
+  const user = await prisma.user.create({ data: { name, username, email, passwordHash, language } });
+  await grantSignupBadges(user.id);
 
   try {
     await signIn("credentials", { email, password, redirect: false });

@@ -41,7 +41,7 @@ export function BadgeTile({
           {isSecret && !isUnlocked ? "Emblema secreto" : description}
         </p>
       </div>
-      <span className="text-[10px] font-mono text-muted">#{code}</span>
+      <span className="text-[10px] font-mono text-muted">#{String(code).padStart(4, "0")}</span>
     </div>
   );
 }

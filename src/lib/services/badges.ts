@@ -51,6 +51,22 @@ export async function getUserBadges(userId: string) {
   }));
 }
 
+/** Grants every badge flagged `autoGrantOnSignup` in the catalog - called right after account creation. */
+export async function grantSignupBadges(userId: string) {
+  const keys = BADGES_CATALOG.filter((b) => b.autoGrantOnSignup).map((b) => b.key);
+  if (keys.length === 0) return;
+
+  await syncBadgeCatalog();
+
+  const badges = await prisma.achievement.findMany({ where: { key: { in: keys } } });
+  if (badges.length === 0) return;
+
+  await prisma.userAchievement.createMany({
+    data: badges.map((badge) => ({ userId, achievementId: badge.id })),
+    skipDuplicates: true,
+  });
+}
+
 export class InvalidSecretWordError extends Error {
   constructor() {
     super("Palavra secreta inválida.");
