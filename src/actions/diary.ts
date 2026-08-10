@@ -26,10 +26,10 @@ export async function logDiaryEntryAction(
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
-  await logDiaryEntry(session.user.id, parsed.data);
+  const { unlockedBadges } = await logDiaryEntry(session.user.id, parsed.data);
   revalidatePath("/", "layout");
 
-  return { success: true };
+  return { success: true, unlockedBadges };
 }
 
 export async function updateDiaryEntryAction(
@@ -53,14 +53,15 @@ export async function updateDiaryEntryAction(
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
+  let unlockedBadges;
   try {
-    await updateDiaryEntry(session.user.id, entryId, parsed.data);
+    ({ unlockedBadges } = await updateDiaryEntry(session.user.id, entryId, parsed.data));
   } catch {
     return { error: "Não foi possível editar este registro." };
   }
 
   revalidatePath("/", "layout");
-  return { success: true };
+  return { success: true, unlockedBadges };
 }
 
 export async function deleteDiaryEntryAction(entryId: string): Promise<void> {

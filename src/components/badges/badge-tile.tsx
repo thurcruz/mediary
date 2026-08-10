@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Award, Lock } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { Modal } from "@/components/ui/modal";
@@ -13,6 +14,8 @@ export function BadgeTile({
   iconUrl,
   unlockedAt,
   isSecret,
+  contextLabel,
+  contextHref,
 }: {
   code: number;
   name: string;
@@ -20,6 +23,8 @@ export function BadgeTile({
   iconUrl: string | null;
   unlockedAt: Date | null;
   isSecret: boolean;
+  contextLabel?: string | null;
+  contextHref?: string | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const isUnlocked = Boolean(unlockedAt);
@@ -57,13 +62,25 @@ export function BadgeTile({
               ? `Conquistado em ${unlockedAt.toLocaleDateString("pt-BR")}`
               : "Ainda não conquistado"}
           </p>
+          {isUnlocked && contextLabel && (
+            <p className="text-xs text-muted">
+              Motivo:{" "}
+              {contextHref ? (
+                <Link href={contextHref} className="text-primary hover:underline">
+                  {contextLabel}
+                </Link>
+              ) : (
+                contextLabel
+              )}
+            </p>
+          )}
         </div>
       </Modal>
     </>
   );
 }
 
-function BadgeIcon({
+export function BadgeIcon({
   iconUrl,
   isUnlocked,
   size,

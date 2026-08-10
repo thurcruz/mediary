@@ -8,6 +8,7 @@ import { DIARY_STATUSES, diaryStatusLabel, type MediaType, type DiaryStatus } fr
 import { StarRating } from "@/components/ui/star-rating";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useBadgeReveal } from "@/components/badges/badge-reveal-context";
 
 export type MyEntryData = {
   id: string;
@@ -101,9 +102,11 @@ function EditEntryForm({
   const [state, formAction, isPending] = useActionState(updateAction, {});
   const [status, setStatus] = useState<DiaryStatus>(entry.status as DiaryStatus);
   const [rating, setRating] = useState<number | null>(entry.rating);
+  const { queueUnlocks } = useBadgeReveal();
 
   useEffect(() => {
     if (state.success) {
+      if (state.unlockedBadges?.length) queueUnlocks(state.unlockedBadges);
       router.refresh();
       onDone();
     }

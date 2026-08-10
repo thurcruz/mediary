@@ -453,6 +453,11 @@ model UserAchievement {
   userId        String
   achievementId String
   unlockedAt    DateTime @default(now())
+  // What triggered the unlock ("qual foi a obra/ação") - shown in the badge
+  // detail modal. Null for badges granted with no natural single trigger
+  // (manual grants, secret words).
+  contextLabel  String?
+  contextHref   String?
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)

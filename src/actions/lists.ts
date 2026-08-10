@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { createListSchema } from "@/lib/validations/lists";
 import { resolveOrCacheMedia } from "@/lib/services/media-cache";
 import { toggleFavorite } from "@/lib/services/favorites";
+import { checkListCreatedBadge, type UnlockedBadge } from "@/lib/services/badges";
 import type { MediaType, Provider } from "@/lib/media-types";
 import type { ActionResult } from "@/types/actions";
 
@@ -37,6 +38,10 @@ export async function createListAction(
       skipDuplicates: true,
     });
   }
+
+  // Grants the pre-existing "Curador" badge. No live-reveal here since createListAction
+  // redirects on success - the user finds out via the achievements page/notification.
+  await checkListCreatedBadge(session.user.id);
 
   redirect(`/lists/${list.id}`);
 }
@@ -100,16 +105,16 @@ export async function toggleFavoriteAction(
   mediaType: MediaType,
   provider: Provider,
   externalId: string,
-): Promise<{ error?: string; isFavorited?: boolean }> {
+): Promise<{ error?: string; isFavorited?: boolean; unlockedBadges?: UnlockedBadge[] }> {
   const session = await auth();
   if (!session?.user) return { error: "Faça login." };
 
   const media = await resolveOrCacheMedia(provider, mediaType, externalId);
   if (!media) return { error: "Não foi possível encontrar este item." };
 
-  const isFavorited = await toggleFavorite(session.user.id, media.id);
+  const { isFavorited, unlockedBadges } = await toggleFavorite(session.user.id, media);
   revalidatePath("/lists");
-  return { isFavorited };
+  return { isFavorited, unlockedBadges };
 }
 
 export async function toggleListFollowAction(listId: string, isFollowing: boolean): Promise<void> {

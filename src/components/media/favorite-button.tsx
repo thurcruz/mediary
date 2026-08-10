@@ -5,6 +5,7 @@ import { Heart } from "lucide-react";
 import { toggleFavoriteAction } from "@/actions/lists";
 import { cn } from "@/lib/utils/cn";
 import type { MediaType, Provider } from "@/lib/media-types";
+import { useBadgeReveal } from "@/components/badges/badge-reveal-context";
 
 export function FavoriteButton({
   mediaType,
@@ -20,6 +21,7 @@ export function FavoriteButton({
   const [isFavorited, setIsFavorited] = useState(initialIsFavorited);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { queueUnlocks } = useBadgeReveal();
 
   return (
     <div className="flex flex-col items-start gap-1.5">
@@ -35,6 +37,7 @@ export function FavoriteButton({
             }
             setError(null);
             if (result.isFavorited !== undefined) setIsFavorited(result.isFavorited);
+            if (result.unlockedBadges?.length) queueUnlocks(result.unlockedBadges);
           })
         }
         aria-pressed={isFavorited}

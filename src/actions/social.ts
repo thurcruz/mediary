@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { followUser, unfollowUser } from "@/lib/services/follow";
 import { createComment } from "@/lib/services/comments";
 import { createNotificationFromActor } from "@/lib/services/notifications";
+import { checkFollowerBadge } from "@/lib/services/badges";
 import { searchUsers, suggestUsersToFollow, type UserSearchResult } from "@/lib/services/user-search";
 import type { ActionResult } from "@/types/actions";
 import type { MediaType } from "@/lib/media-types";
@@ -30,6 +31,9 @@ export async function toggleFollowAction(targetUserId: string, isFollowing: bool
     await unfollowUser(session.user.id, targetUserId);
   } else {
     await followUser(session.user.id, targetUserId);
+    // Grants the pre-existing "Primeiro fã" badge to the person being followed - no
+    // live-reveal, they're not present in this request; they'll see it via notification.
+    await checkFollowerBadge(targetUserId);
   }
 }
 
@@ -77,15 +81,16 @@ export async function createCommentAction(
   const listId = formData.get("listId");
   const text = formData.get("text");
 
+  let unlockedBadges;
   try {
-    await createComment(session.user.id, {
+    ({ unlockedBadges } = await createComment(session.user.id, {
       diaryEntryId: diaryEntryId ? String(diaryEntryId) : undefined,
       listId: listId ? String(listId) : undefined,
       text: String(text ?? ""),
-    });
+    }));
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Não foi possível comentar." };
   }
 
-  return { success: true };
+  return { success: true, unlockedBadges };
 }

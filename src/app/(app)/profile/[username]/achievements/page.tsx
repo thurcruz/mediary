@@ -49,6 +49,8 @@ export default async function AchievementsPage({
             iconUrl={badge.iconUrl}
             unlockedAt={badge.unlockedAt}
             isSecret={badge.isSecret}
+            contextLabel={badge.contextLabel}
+            contextHref={badge.contextHref}
           />
         ))}
       </div>

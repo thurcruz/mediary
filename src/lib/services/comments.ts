@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { createCommentSchema, type CreateCommentInput } from "@/lib/validations/social";
 import { createNotificationFromActor } from "@/lib/services/notifications";
+import { checkCommentBadges, type UnlockedBadge } from "@/lib/services/badges";
+import { mediaDetailHref } from "@/lib/utils/media-href";
 
 /**
  * The only allowed write path for Comment. SQLite can't enforce "exactly one
@@ -20,15 +22,35 @@ export async function createComment(userId: string, input: CreateCommentInput) {
       text: data.text,
     },
     include: {
-      diaryEntry: { select: { userId: true } },
+      diaryEntry: { select: { userId: true, media: true } },
     },
   });
 
-  if (comment.diaryEntry && comment.diaryEntry.userId !== userId) {
-    await createNotificationFromActor(comment.diaryEntry.userId, "COMMENT", userId, {
-      diaryEntryId: comment.diaryEntryId,
+  let unlockedBadges: UnlockedBadge[] = [];
+
+  if (comment.diaryEntry) {
+    if (comment.diaryEntry.userId !== userId) {
+      await createNotificationFromActor(comment.diaryEntry.userId, "COMMENT", userId, {
+        diaryEntryId: comment.diaryEntryId,
+      });
+    }
+
+    const diaryEntryCommentCount = await prisma.comment.count({
+      where: { diaryEntryId: comment.diaryEntryId! },
     });
+    const media = comment.diaryEntry.media;
+    const context = {
+      label: media.title,
+      href: mediaDetailHref(media.mediaType, media.provider, media.externalId),
+    };
+
+    const { commenterUnlocks } = await checkCommentBadges(
+      userId,
+      { diaryEntryOwnerId: comment.diaryEntry.userId, diaryEntryCommentCount },
+      context,
+    );
+    unlockedBadges = commenterUnlocks;
   }
 
-  return comment;
+  return { comment, unlockedBadges };
 }

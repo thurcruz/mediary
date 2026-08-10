@@ -5,18 +5,21 @@ import { useRouter } from "next/navigation";
 import { createCommentAction } from "@/actions/social";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useBadgeReveal } from "@/components/badges/badge-reveal-context";
 
 export function CommentForm({ diaryEntryId }: { diaryEntryId: string }) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(createCommentAction, {});
   const formRef = useRef<HTMLFormElement>(null);
+  const { queueUnlocks } = useBadgeReveal();
 
   useEffect(() => {
     if (state.success) {
       formRef.current?.reset();
+      if (state.unlockedBadges?.length) queueUnlocks(state.unlockedBadges);
       router.refresh();
     }
-  }, [state.success, router]);
+  }, [state.success, state.unlockedBadges, queueUnlocks, router]);
 
   return (
     <form ref={formRef} action={formAction} className="flex items-center gap-2">

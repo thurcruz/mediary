@@ -1,16 +1,22 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { logDiaryEntryAction } from "@/actions/diary";
 import { DIARY_STATUSES, diaryStatusLabel, type MediaType, type DiaryStatus } from "@/lib/media-types";
 import { StarRating } from "@/components/ui/star-rating";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useBadgeReveal } from "@/components/badges/badge-reveal-context";
 
 export function DiaryEntryForm({ mediaId, mediaType }: { mediaId: string; mediaType: MediaType }) {
   const [state, formAction, isPending] = useActionState(logDiaryEntryAction, {});
   const [status, setStatus] = useState<DiaryStatus>("COMPLETED");
   const [rating, setRating] = useState<number | null>(null);
+  const { queueUnlocks } = useBadgeReveal();
+
+  useEffect(() => {
+    if (state.unlockedBadges?.length) queueUnlocks(state.unlockedBadges);
+  }, [state.unlockedBadges, queueUnlocks]);
 
   return (
     <form

@@ -8,6 +8,7 @@ import { isMediaFavorited } from "@/lib/services/favorites";
 import { getDisplayTitle, getAlternateTitles } from "@/lib/utils/display-title";
 import { MediaCover } from "@/components/media/media-cover";
 import { FavoriteButton } from "@/components/media/favorite-button";
+import { ShareMediaButton } from "@/components/media/share-media-button";
 import { StarRating } from "@/components/ui/star-rating";
 import { Badge } from "@/components/ui/badge";
 import { DiaryEntryForm } from "@/components/diary/diary-entry-form";
@@ -104,12 +105,20 @@ export default async function MediaDetailPage({
       </div>
 
       {session?.user && (
-        <FavoriteButton
-          mediaType={mediaType}
-          provider={provider}
-          externalId={decodedExternalId}
-          initialIsFavorited={isFavorited}
-        />
+        <div className="flex items-center gap-2">
+          <FavoriteButton
+            mediaType={mediaType}
+            provider={provider}
+            externalId={decodedExternalId}
+            initialIsFavorited={isFavorited}
+          />
+          <ShareMediaButton
+            mediaType={mediaType}
+            provider={provider}
+            externalId={decodedExternalId}
+            title={displayTitle}
+          />
+        </div>
       )}
 
       {media.description && (

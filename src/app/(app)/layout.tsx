@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/top-bar";
 import { FloatingNav } from "@/components/nav/floating-nav";
+import { BadgeRevealProvider } from "@/components/badges/badge-reveal-context";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -20,10 +21,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   });
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col">
-      <TopBar unreadCount={unreadCount} />
-      <main className="flex-1 px-4 pb-28 sm:px-6">{children}</main>
-      <FloatingNav username={session.user.username} />
-    </div>
+    <BadgeRevealProvider>
+      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col">
+        <TopBar unreadCount={unreadCount} />
+        <main className="flex-1 px-4 pb-28 sm:px-6">{children}</main>
+        <FloatingNav username={session.user.username} />
+      </div>
+    </BadgeRevealProvider>
   );
 }

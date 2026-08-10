@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { diaryEntrySchema, type DiaryEntryInput } from "@/lib/validations/diary";
+import { checkDiaryEntryBadges } from "@/lib/services/badges";
 
 export async function logDiaryEntry(userId: string, input: DiaryEntryInput) {
   const data = diaryEntrySchema.parse(input);
@@ -18,11 +19,13 @@ export async function logDiaryEntry(userId: string, input: DiaryEntryInput) {
       completedAt: data.status === "COMPLETED" ? loggedAt : null,
       startedAt: data.status === "IN_PROGRESS" ? loggedAt : null,
     },
+    include: { media: true },
   });
 
   await syncMediaRatingAggregate(data.mediaId);
+  const unlockedBadges = await checkDiaryEntryBadges(userId, entry, entry.media);
 
-  return entry;
+  return { entry, unlockedBadges };
 }
 
 export async function updateDiaryEntry(userId: string, entryId: string, input: DiaryEntryInput) {
@@ -37,10 +40,13 @@ export async function updateDiaryEntry(userId: string, entryId: string, input: D
       containsSpoiler: data.containsSpoiler,
       isFavorite: data.isFavorite,
     },
+    include: { media: true },
   });
 
   await syncMediaRatingAggregate(entry.mediaId);
-  return entry;
+  const unlockedBadges = await checkDiaryEntryBadges(userId, entry, entry.media);
+
+  return { entry, unlockedBadges };
 }
 
 export async function deleteDiaryEntry(userId: string, entryId: string) {
