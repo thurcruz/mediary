@@ -26,15 +26,19 @@ export function BadgeTile({
         isUnlocked ? "border-border bg-surface" : "border-dashed border-border bg-surface/50 opacity-60",
       )}
     >
-      <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-surface-elevated">
-        {iconUrl ? (
-          <Image src={iconUrl} alt={name} fill className="rounded-full object-cover" />
-        ) : isUnlocked ? (
-          <Award className="h-7 w-7 text-primary" />
-        ) : (
+      {isUnlocked ? (
+        <div className="relative flex h-16 w-16 items-center justify-center">
+          {iconUrl ? (
+            <Image src={iconUrl} alt={name} fill className="object-contain" />
+          ) : (
+            <Award className="h-10 w-10 text-primary" />
+          )}
+        </div>
+      ) : (
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-elevated">
           <Lock className="h-6 w-6 text-muted" />
-        )}
-      </div>
+        </div>
+      )}
       <div>
         <p className="text-sm font-medium">{isSecret && !isUnlocked ? "???" : name}</p>
         <p className="mt-0.5 text-xs text-muted">
