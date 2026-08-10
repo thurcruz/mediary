@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Palette } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 export function ThemeToggle() {
@@ -17,8 +17,9 @@ export function ThemeToggle() {
   }, []);
 
   const options = [
-    { value: "dark", label: "Escuro", icon: Moon },
-    { value: "light", label: "Claro", icon: Sun },
+    { value: "dark", label: "Dark", icon: Moon },
+    { value: "light", label: "Light", icon: Sun },
+    { value: "mediary", label: "Mediary", icon: Palette },
   ] as const;
 
   return (

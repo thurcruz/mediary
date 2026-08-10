@@ -9,7 +9,7 @@ export function ThemeProvider({ children, ...props }: ComponentProps<typeof Next
       attribute="data-theme"
       defaultTheme="dark"
       enableSystem={false}
-      themes={["dark", "light"]}
+      themes={["dark", "light", "mediary"]}
       {...props}
     >
       {children}
